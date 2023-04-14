@@ -1,0 +1,39 @@
+name: Extract Factory Image and Upload Boot Image
+
+# Trigger the workflow manually
+on:
+  workflow_dispatch:
+
+jobs:
+  extract_and_upload_boot_image:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code to be used in the workflow
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Download the Factory Image for Nexus and Pixel Devices defined in the temp file
+      - name: Download Factory Image
+        run: |
+          # Read the URL from the temp file
+          URL=$(sed -n '3p' temp)
+
+          # Download the first zip file
+          curl -L -o factory.zip "$URL"
+
+      # Extract the Factory Image and Boot Image
+      - name: Extract Factory Image and Boot Image
+        run: |
+          # Extract only the image-*.zip from the downloaded Factory Image
+          unzip -j factory.zip '*/image-*.zip' -d factory
+
+          # Extract only the boot.img from the image-*.zip
+          unzip -j factory/image-*.zip 'boot.img' -d images
+
+      # Upload the extracted boot image as an artifact
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: boot-img
+          path: images/boot.img
